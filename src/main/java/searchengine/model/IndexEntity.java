@@ -11,7 +11,6 @@ import java.io.Serializable;
                                         @Index(name = "lemma_id_list", columnList = "lemma_id")})
 @NoArgsConstructor
 public class IndexEntity implements Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

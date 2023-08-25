@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 @Repository
 public interface IndexRepository extends JpaRepository<IndexEntity, Long> {
-
     @Cacheable("indexesByLemmasAndPages")
     default List<IndexEntity> findByPagesAndLemmas(List<LemmaEntity> lemmaListId, List<PageEntity> pageListId) {
         Set<Long> lemmaIds = lemmaListId.stream().map(LemmaEntity::getId).collect(Collectors.toSet());

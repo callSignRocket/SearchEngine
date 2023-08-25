@@ -17,7 +17,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @RequiredArgsConstructor
 @Slf4j
 public class LemmaParserImpl implements LemmaParser {
-
     private final PageRepository pageRepository;
     private final Morphology morphology;
     private List<StatisticsLemma> statisticsLemmaList;

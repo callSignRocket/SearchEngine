@@ -12,7 +12,6 @@ import java.util.List;
 @Table(name = "lemma")
 @NoArgsConstructor
 public class LemmaEntity implements Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;

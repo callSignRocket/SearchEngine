@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class RandomUserAgent {
+
     private static final Map<String, String[]> uaMap = new HashMap<>();
     private static final Map<String, Double> freqMap = new HashMap<>();
 

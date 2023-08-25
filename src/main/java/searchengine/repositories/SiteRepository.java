@@ -6,6 +6,7 @@ import searchengine.model.SiteEntity;
 
 @Repository
 public interface SiteRepository extends JpaRepository<SiteEntity, Long> {
+
     SiteEntity findByUrl(String url);
     void deleteByUrl(String url);
 }

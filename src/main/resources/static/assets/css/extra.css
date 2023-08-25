@@ -451,6 +451,7 @@
     float: none;
   }
 }
+
 @media screen and (max-width: 480px) {
   .Section-header {
     display: block;

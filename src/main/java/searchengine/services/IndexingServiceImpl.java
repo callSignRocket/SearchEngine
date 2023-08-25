@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 @RequiredArgsConstructor
 @Slf4j
 public class IndexingServiceImpl implements IndexingService{
+
     private static final int processorCoreCount = Runtime.getRuntime().availableProcessors();
     private ExecutorService executorService;
     private final PageRepository pageRepository;

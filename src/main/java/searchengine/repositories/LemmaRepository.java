@@ -11,7 +11,6 @@ import java.util.List;
 
 @Repository
 public interface LemmaRepository extends JpaRepository<LemmaEntity, Long> {
-
     long countBySite(SiteEntity site);
     List<LemmaEntity> findBySite(SiteEntity site);
 

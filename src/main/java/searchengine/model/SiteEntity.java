@@ -12,7 +12,6 @@ import java.util.List;
 @Entity
 @Table(name = "site")
 public class SiteEntity implements Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;

@@ -9,6 +9,7 @@ import searchengine.exception.ErrMessage;
 
 @RestControllerAdvice
 public class ApiErrorController {
+
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler(ChangeSetPersister.NotFoundException.class)
     public ErrMessage handleException(ChangeSetPersister.NotFoundException exception) {

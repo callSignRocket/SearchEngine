@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class SearchServiceImpl implements SearchService{
-
     private final Morphology morphology;
     private final LemmaRepository lemmaRepository;
     private final PageRepository pageRepository;

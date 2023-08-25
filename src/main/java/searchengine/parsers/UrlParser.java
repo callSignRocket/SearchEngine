@@ -15,6 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.RecursiveTask;
 
 public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
+
     private final String url;
     public static final CopyOnWriteArrayList<String> WRITE_ARRAY_LIST = new CopyOnWriteArrayList<>();
     private final List<StatisticsPage> statisticsPageList;

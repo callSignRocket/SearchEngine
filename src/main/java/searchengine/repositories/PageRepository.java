@@ -13,7 +13,6 @@ import java.util.Set;
 
 @Repository
 public interface PageRepository extends JpaRepository<PageEntity, Long> {
-
     long countBySite(SiteEntity site);
     Iterable<PageEntity> findBySite(SiteEntity site);
 

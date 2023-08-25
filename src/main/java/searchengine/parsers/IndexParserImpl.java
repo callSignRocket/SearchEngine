@@ -20,7 +20,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class IndexParserImpl implements IndexParser{
-
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final Morphology morphology;

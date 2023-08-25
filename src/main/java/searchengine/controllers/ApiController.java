@@ -19,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class ApiController {
+
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
     private final SiteRepository siteRepository;

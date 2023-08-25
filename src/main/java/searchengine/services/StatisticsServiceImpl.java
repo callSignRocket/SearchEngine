@@ -18,7 +18,6 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
-
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
     private final SiteRepository siteRepository;

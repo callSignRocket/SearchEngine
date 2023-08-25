@@ -16,6 +16,7 @@ import java.util.Locale;
 @Slf4j
 @Component
 public class Analyzer implements Morphology{
+
     private static RussianLuceneMorphology russianLuceneMorphology;
     private static final String REGEX = "[\\p{Punct}\\d@©◄»«—№…]";
     private final static Marker INVALID_SYMBOL_MARKER = MarkerManager.getMarker("INVALID_SYMBOL");

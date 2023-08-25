@@ -22,6 +22,7 @@ import java.util.concurrent.ForkJoinPool;
 
 @RequiredArgsConstructor
 public class SiteIndexed implements Runnable {
+
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
     private final LemmaRepository lemmaRepository;

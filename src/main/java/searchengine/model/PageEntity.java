@@ -12,7 +12,6 @@ import java.util.List;
 @Table(name = "`page`", indexes = {@Index(name = "index_site_id", columnList = "site_id")})
 @NoArgsConstructor
 public class PageEntity implements Serializable {
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private long id;
