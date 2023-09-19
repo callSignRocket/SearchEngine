@@ -24,7 +24,7 @@ public class LemmaParserImpl implements LemmaParser {
     @Override
     public void run(SiteEntity site) {
         statisticsLemmaList = new CopyOnWriteArrayList<>();
-        Iterable<PageEntity> pageList = pageRepository.findAll();
+        Iterable<PageEntity> pageList = pageRepository.findBySite(site);
         TreeMap<String, Integer> lemmaList = new TreeMap<>();
         for (PageEntity page : pageList) {
             String content = page.getContent();

@@ -1,7 +1,6 @@
 package searchengine.parsers;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.statistics.StatisticsIndex;
@@ -35,6 +34,9 @@ public class SiteIndexed implements Runnable {
 
     @Override
     public void run() {
+        if (siteRepository.findByUrl(url) != null) {
+            deleteDataFromSite();
+        }
         saveDateSite();
         try {
             List<StatisticsPage> statisticsPageList = getStatisticsPageList();
@@ -43,15 +45,14 @@ public class SiteIndexed implements Runnable {
             indexingWords();
         } catch (InterruptedException e) {
             errorSite();
-            Thread.currentThread().interrupt();
         }
     }
 
     private List<StatisticsPage> getStatisticsPageList() throws InterruptedException {
         if (!Thread.interrupted()) {
             String urlFormat = url + "/";
-            List<StatisticsPage> statisticsPageVector = new ArrayList<>();
-            List<String> urlList = new ArrayList<>();
+            List<StatisticsPage> statisticsPageVector = new Vector<>();
+            List<String> urlList = new Vector<>();
             ForkJoinPool forkJoinPool = new ForkJoinPool(coreCount);
             List<StatisticsPage> pages = forkJoinPool.invoke(new UrlParser(urlFormat, statisticsPageVector, urlList));
             return new CopyOnWriteArrayList<>(pages);
@@ -64,26 +65,26 @@ public class SiteIndexed implements Runnable {
             site.setStatusTime(LocalDateTime.now());
             lemmaParser.run(site);
             List<StatisticsLemma> statisticsLemmaList = lemmaParser.getLemmaDtoList();
-            List<LemmaEntity> lemmaList = new ArrayList<>(statisticsLemmaList.size());
+            List<LemmaEntity> lemmaList = new CopyOnWriteArrayList<>();
             for (StatisticsLemma statisticsLemma : statisticsLemmaList) {
                 lemmaList.add(new LemmaEntity(statisticsLemma.lemma(), statisticsLemma.frequency(), site));
             }
-            lemmaRepository.saveAll(lemmaList);
             lemmaRepository.flush();
+            lemmaRepository.saveAll(lemmaList);
         } else throw new RuntimeException();
     }
 
     private void saveToBase(List<StatisticsPage> pages) throws InterruptedException {
         if (!Thread.interrupted()) {
             SiteEntity site = siteRepository.findByUrl(url);
-            List<PageEntity> pageList = new ArrayList<>(pages.size());
+            List<PageEntity> pageList = new CopyOnWriteArrayList<>();
             for (StatisticsPage page : pages) {
                 int first = page.url().indexOf(url) + url.length();
                 String format = page.url().substring(first);
                 pageList.add(new PageEntity(site, format, page.code(), page.content()));
             }
-            pageRepository.saveAll(pageList);
             pageRepository.flush();
+            pageRepository.saveAll(pageList);
         } else throw new InterruptedException();
     }
 
@@ -91,16 +92,16 @@ public class SiteIndexed implements Runnable {
         if (!Thread.interrupted()) {
             SiteEntity site = siteRepository.findByUrl(url);
             indexParser.run(site);
-            List<StatisticsIndex> statisticsIndexList = indexParser.getIndexList();
-            List<IndexEntity> indexList = new ArrayList<>(statisticsIndexList.size());
+            List<StatisticsIndex> statisticsIndexList = new CopyOnWriteArrayList<>(indexParser.getIndexList());
+            List<IndexEntity> indexList = new CopyOnWriteArrayList<>();
             site.setStatusTime(LocalDateTime.now());
             for (StatisticsIndex statisticsIndex : statisticsIndexList) {
                 PageEntity page = pageRepository.getReferenceById(statisticsIndex.pageId());
                 LemmaEntity lemma = lemmaRepository.getReferenceById(statisticsIndex.lemmaId());
                 indexList.add(new IndexEntity(page, lemma, statisticsIndex.rank()));
             }
-            indexRepository.saveAll(indexList);
             indexRepository.flush();
+            indexRepository.saveAll(indexList);
             site.setStatusTime(LocalDateTime.now());
             site.setStatus(Status.INDEXED);
             siteRepository.save(site);
@@ -128,10 +129,20 @@ public class SiteIndexed implements Runnable {
     }
 
     private void errorSite() {
-        SiteEntity site = new SiteEntity();
+        SiteEntity site = siteRepository.findByUrl(url);
         site.setLastError("Индексация прервана");
         site.setStatus(Status.FAILED);
         site.setStatusTime(LocalDateTime.now());
         siteRepository.save(site);
+    }
+
+    private void deleteDataFromSite() {
+        SiteEntity site = siteRepository.findByUrl(url);
+        site.setStatus(Status.INDEXING);
+        site.setName(getName());
+        site.setStatusTime(LocalDateTime.now());
+        siteRepository.save(site);
+        siteRepository.flush();
+        siteRepository.delete(site);
     }
 }

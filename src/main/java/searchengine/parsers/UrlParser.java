@@ -1,5 +1,6 @@
 package searchengine.parsers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -9,15 +10,14 @@ import searchengine.dto.statistics.StatisticsPage;
 import searchengine.utils.RandomUserAgent;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 
+@Slf4j
 public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
 
     private final String url;
-    public static final CopyOnWriteArrayList<String> WRITE_ARRAY_LIST = new CopyOnWriteArrayList<>();
     private final List<StatisticsPage> statisticsPageList;
     private final List<String> urlList;
     private static final String CSS_QUERY = "a[href]";
@@ -32,51 +32,64 @@ public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
     @Override
     protected List<StatisticsPage> compute() {
         try {
-            Connection.Response response = Jsoup.connect(url)
-                    .ignoreContentType(true)
-                    .userAgent(RandomUserAgent.getRandomUserAgent())
-                    .execute();
-            Document document = response.parse();
+            Thread.sleep(150);
+            Document document = getConnect(url);
             String html = document.outerHtml();
-            int status = response.statusCode();
-            StatisticsPage statisticsPage = new StatisticsPage(url, html, status);
+            Connection.Response response = document.connection().response();
+            int statusCode = response.statusCode();
+            StatisticsPage statisticsPage = new StatisticsPage(url, html, statusCode);
             statisticsPageList.add(statisticsPage);
             Elements elements = document.select(CSS_QUERY);
             List<UrlParser> taskList = new ArrayList<>();
             for (Element element : elements) {
-                String attributeUrl = element.absUrl(ATTRIBUTE_KEY);
-                if (!attributeUrl.isEmpty() && attributeUrl.startsWith(url) && !attributeUrl.contains("#") &&
-                        !attributeUrl.contains(".pdf") && !attributeUrl.contains(".jpg") && !attributeUrl.contains(".JPG") &&
-                        !attributeUrl.contains(".png") && !WRITE_ARRAY_LIST.contains(attributeUrl) && !urlList.contains(attributeUrl)) {
-                    WRITE_ARRAY_LIST.add(attributeUrl);
-                    urlList.add(attributeUrl);
-                    UrlParser task = new UrlParser(attributeUrl, statisticsPageList, urlList);
+                String link = element.absUrl(ATTRIBUTE_KEY);
+                if (!link.isEmpty()
+                        && link.startsWith(url)
+                        && !link.contains("#")
+                        && !isFile(link)
+                        && !urlList.contains(link))
+                {
+                    urlList.add(link);
+                    UrlParser task = new UrlParser(link, statisticsPageList, urlList);
                     task.fork();
                     taskList.add(task);
                 }
             }
-            taskList.sort(Comparator.comparing(UrlParser::getUrl));
-            int i = 0;
-            int allTasksSize = taskList.size();
-            while (i < allTasksSize) {
-                UrlParser task = taskList.get(i);
-                task.join();
-                i++;
-            }
+            taskList.forEach(ForkJoinTask::join);
         } catch (Exception e) {
+            log.debug("Parsing error - " + url);
             StatisticsPage statisticsPage = new StatisticsPage(url, "", 500);
             statisticsPageList.add(statisticsPage);
-        }
-
-        try {
-            Thread.sleep(150);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
         return statisticsPageList;
     }
 
-    public String getUrl() {
-        return url;
+    public Document getConnect(String url) {
+        Document document = null;
+        try {
+            Thread.sleep(150);
+            document =Jsoup.connect(url).userAgent(RandomUserAgent.getRandomUserAgent()).get();
+        } catch (Exception e) {
+            log.debug("Не удается подключиться к сайту " + url);
+        }
+        return document;
+    }
+
+    private static boolean isFile(String link) {
+        link.toLowerCase();
+        return link.contains(".jpg")
+                || link.contains(".JPG")
+                || link.contains(".jpeg")
+                || link.contains(".png")
+                || link.contains(".gif")
+                || link.contains(".webp")
+                || link.contains(".pdf")
+                || link.contains(".eps")
+                || link.contains(".xlsx")
+                || link.contains(".doc")
+                || link.contains(".pptx")
+                || link.contains(".docx")
+                || link.contains("?_ga")
+                || link.contains(".svg");
     }
 }

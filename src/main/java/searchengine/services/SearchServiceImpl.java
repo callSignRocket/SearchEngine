@@ -2,7 +2,11 @@ package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import searchengine.dto.statistics.FalseResponse;
+import searchengine.dto.statistics.SearchResponse;
 import searchengine.dto.statistics.StatisticsSearch;
 import searchengine.model.IndexEntity;
 import searchengine.model.LemmaEntity;
@@ -29,40 +33,41 @@ public class SearchServiceImpl implements SearchService{
     private final SiteRepository siteRepository;
 
     @Override
-    public List<StatisticsSearch> allSiteSearch(String searchText, int offset, int limit) {
+    public SearchResponse allSiteSearch(String searchText, int offset, int limit) {
         log.info("Результат поиска: " + searchText);
         List<SiteEntity> siteList = siteRepository.findAll();
-        List<StatisticsSearch> result = new ArrayList<>();
-        List<LemmaEntity> foundLemmaList = new ArrayList<>();
+        List<StatisticsSearch> result;
         List<String> textLemmaList = getLemmaFromSearchText(searchText);
+        List<LemmaEntity> foundLemmaList = getLemmasFromSiteList(siteList, textLemmaList);
+
+        if (foundLemmaList.isEmpty()) {
+            result = getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
+            return new SearchResponse(true, result.size(), result);
+        }
+
+        List<StatisticsSearch> searchData = getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
+        SearchResponse search = new SearchResponse(true, searchData.size(), searchData);
+        log.info("Поиск завершен.");
+        return search;
+    }
+
+    private List<LemmaEntity> getLemmasFromSiteList(List<SiteEntity> siteList, List<String> textLemmaList) {
+        List<LemmaEntity> foundLemmaList = new ArrayList<>();
         for (SiteEntity site : siteList) {
             foundLemmaList.addAll(getLemmaListFromSite(textLemmaList, site));
         }
-        List<StatisticsSearch> searchData = null;
-        for (LemmaEntity lemma : foundLemmaList) {
-            if (lemma.getLemma().equals(searchText)) {
-                searchData = new ArrayList<>(getSearchDtoList(foundLemmaList, textLemmaList, offset, limit));
-                searchData.sort((o1, o2) -> Float.compare(o2.relevance(), o1.relevance()));
-                if (searchData.size() > limit) {
-                    for (int i = offset; i < limit; i++) {
-                        result.add(searchData.get(i));
-                    }
-                    return result;
-                }
-            } else throw new RuntimeException();
-        }
-        log.info("Поиск завершен.");
-        return searchData;
+        return foundLemmaList;
     }
 
     @Override
-    public List<StatisticsSearch> siteSearch(String searchText, String url, int offset, int limit) {
+    public SearchResponse siteSearch(String searchText, String url, int offset, int limit) {
         log.info("Поиск: " + "«" + searchText + "»" + " на странице: " + url);
         SiteEntity site = siteRepository.findByUrl(url);
         List<String> textLemmaList = getLemmaFromSearchText(searchText);
         List<LemmaEntity> foundLemmaList = getLemmaListFromSite(textLemmaList, site);
         log.info("Поиск завершен.");
-        return getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
+        List<StatisticsSearch> data = getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
+        return new SearchResponse(true, data.size(), data);
     }
 
     private List<String> getLemmaFromSearchText(String searchText) {
@@ -77,29 +82,33 @@ public class SearchServiceImpl implements SearchService{
 
     private List<LemmaEntity> getLemmaListFromSite(List<String> lemmas, SiteEntity site) {
         lemmaRepository.flush();
-        List<LemmaEntity> lemmaList = lemmaRepository.findLemmaListBySite(lemmas, site);
-        List<LemmaEntity> result = new ArrayList<>(lemmaList);
-        result.sort(Comparator.comparingInt(LemmaEntity::getFrequency));
-        return result;
+        List<LemmaEntity> lemmaList = new ArrayList<>();
+        for (String lemma : lemmas) {
+            lemmaList.addAll(lemmaRepository.findByLemmaAndSite(lemma, site));
+        }
+        lemmaList.sort(Comparator.comparingInt(LemmaEntity::getFrequency));
+        return lemmaList;
     }
 
     private List<StatisticsSearch> getSearchData(Hashtable<PageEntity, Float> pageList, List<String> textLemmaList) {
-        return pageList.keySet().stream()
-                .map(page -> {
-                    String uri = page.getPath();
-                    String content = page.getContent();
-                    SiteEntity siteEntity = page.getSite();
-                    String site = siteEntity.getUrl();
-                    String siteName = siteEntity.getName();
-                    Float absRelevance = pageList.get(page);
+        List<StatisticsSearch> result = new ArrayList<>();
 
-                    StringBuilder clearContent = new StringBuilder();
-                    String title = CleanHtmlCode.clear(content, "title");
-                    String body = CleanHtmlCode.clear(content, "body");
-                    clearContent.append(title).append(" ").append(body);
-                    String snippet = getSnippet(clearContent.toString(), textLemmaList);
-                    return new StatisticsSearch(site, siteName, uri, title, snippet , absRelevance);
-        }).toList();
+        for (PageEntity page : pageList.keySet()) {
+            String uri = page.getPath();
+            String content = page.getContent();
+            SiteEntity siteEntity = page.getSite();
+            String site = siteEntity.getUrl();
+            String siteName = siteEntity.getName();
+            Float absRelevance = pageList.get(page);
+
+            StringBuilder clearContent = new StringBuilder();
+            String title = CleanHtmlCode.clear(content, "title");
+            String body = CleanHtmlCode.clear(content, "body");
+            clearContent.append(title).append(" ").append(body);
+            String snippet = getSnippet(clearContent.toString(), textLemmaList);
+            result.add(new StatisticsSearch(site, siteName, uri, title, snippet, absRelevance));
+        }
+        return result;
     }
 
     private String getSnippet(String content, List<String> lemmaList) {
@@ -135,7 +144,8 @@ public class SearchServiceImpl implements SearchService{
             String text = getWordsFromIndex(start, end, content);
             result.add(text);
         }
-        return result.stream().sorted(Comparator.comparingInt(String::length).reversed()).toList();
+        result.sort(Comparator.comparingInt(String::length).reversed());
+        return result;
     }
 
     private String getWordsFromIndex(int start, int end, String content) {
@@ -159,27 +169,63 @@ public class SearchServiceImpl implements SearchService{
 
     private List<StatisticsSearch> getSearchDtoList(List<LemmaEntity> lemmaList, List<String> textLemmaList,
                                                     int offset, int limit) {
-        List<StatisticsSearch> result = new ArrayList<>();
         pageRepository.flush();
         if (lemmaList.size() >= textLemmaList.size()) {
-            Set<PageEntity> foundPageSet = new HashSet<>(pageRepository.findByLemmaList(lemmaList));
             indexRepository.flush();
-            List<PageEntity> foundPageList = new ArrayList<>(foundPageSet);
+            List<IndexEntity> foundIndexForPage = findIndexList(lemmaList);
+            List<PageEntity> foundPageList = findPageList(foundIndexForPage);
+            indexRepository.flush();
             List<IndexEntity> foundIndexList = indexRepository.findByPagesAndLemmas(lemmaList, foundPageList);
             Hashtable<PageEntity, Float> sortedPageByAbsRelevance = getPageAbsRelevance(foundPageList, foundIndexList);
             List<StatisticsSearch> dataList = getSearchData(sortedPageByAbsRelevance, textLemmaList);
 
-            if (offset > dataList.size()) {
-                return new ArrayList<>();
-            }
-            if (dataList.size() > limit) {
-                for (int i = offset; i < limit; i++) {
+            return resultForSearchDtoList(offset, limit, dataList);
+        }
+        return new ArrayList<>();
+    }
+
+    private List<PageEntity> findPageList(List<IndexEntity> foundIndexList) {
+        List<PageEntity> foundPageList = new ArrayList<>();
+        pageRepository.flush();
+        for (IndexEntity index : foundIndexList) {
+            foundPageList.add(index.getPage());
+        }
+        return foundPageList;
+    }
+
+    private List<IndexEntity> findIndexList(List<LemmaEntity> lemmaList) {
+        List<IndexEntity> foundIndexList = new ArrayList<>();
+        indexRepository.flush();
+        for (LemmaEntity lemma : lemmaList) {
+            foundIndexList.addAll(indexRepository.findByLemmaId(lemma.getId()));
+        }
+        return foundIndexList;
+    }
+
+    private List<StatisticsSearch> resultForSearchDtoList(int offset, int limit, List<StatisticsSearch> dataList) {
+        List<StatisticsSearch> result = new ArrayList<>();
+
+        if (offset > dataList.size()) {
+            return new ArrayList<>();
+        }
+        if (dataList.size() > limit) {
+            for (int i = offset; i < limit; i++) {
+                if (dataList.get(i) != null) {
                     result.add(dataList.get(i));
                 }
-                return result;
-            } else return dataList;
-        }else return result;
+            }
+            return result;
+        } else {
+            for (StatisticsSearch dto : dataList) {
+                if (dto != null) {
+                    result.add(dto);
+                }
+            }
+            return result;
+        }
     }
+    
+    
 
     private Hashtable<PageEntity, Float> getPageAbsRelevance(List<PageEntity> pageList, List<IndexEntity> indexList) {
         Map<PageEntity, Float> pageWithRelevance = pageList.stream()
@@ -193,5 +239,24 @@ public class SearchServiceImpl implements SearchService{
 
         return pageWithAbsRelevance.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, Hashtable::new));
+    }
+
+    @Override
+    public ResponseEntity<Object> search(String searchText, String url, int offset, int limit) {
+        SearchResponse searchResponse;
+        if (searchText.isEmpty()) {
+            return new ResponseEntity<>(new FalseResponse(false, "Задан пустой поисковой запрос"), HttpStatus.BAD_REQUEST);
+        } else {
+            if (!url.isEmpty()) {
+                if (siteRepository.findByUrl(url) == null) {
+                    return new ResponseEntity<>(new FalseResponse(false, "Страница не найдена"), HttpStatus.BAD_REQUEST);
+                } else {
+                    searchResponse = siteSearch(searchText, url, offset, limit);
+                }
+            } else {
+                searchResponse = allSiteSearch(searchText, offset, limit);
+            }
+            return new ResponseEntity<>(searchResponse, HttpStatus.OK);
+        }
     }
 }

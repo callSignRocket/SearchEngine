@@ -1,29 +1,29 @@
 # example values
 indexing-settings:
   sites:
-    - url: https://www.lenta.ru
-      name: Лента.ру
+#    - url: https://www.lenta.ru
+#      name: Лента.ру
 #    - url: https://www.skillbox.ru
 #      name: Skillbox
-#    - url: https://www.playback.ru
-#      name: PlayBack.Ru
-#    - url: https://volochek.life/
-#      name: Вышний Волочек
-    - url: http://radiomv.ru/
-      name: Милицейская волна
-    - url: https://ipfran.ru/
-      name: Институт прикладной физики Российской академии наук
-    - url: https://dimonvideo.ru/
+    - url: https://www.playback.ru
+      name: PlayBack.Ru
+    - url: https://volochek.life
+      name: Вышний Волочек
+#    - url: http://radiomv.ru
+#      name: Милицейская волна
+#    - url: https://ipfran.ru
+#      name: Институт прикладной физики Российской академии наук
+    - url: https://dimonvideo.ru
       name: DIMONVIDEO
-#    - url: https://nikoartgallery.com/
+#    - url: https://nikoartgallery.com
 #      name: Niko ART GALLERY
-#    - url: https://et-cetera.ru/mobile/
+#    - url: https://et-cetera.ru/mobile
 #      name: Театр «Et Cetera»
-#    - url: https://www.lutherancathedral.ru/
+#    - url: https://www.lutherancathedral.ru
 #      name: Кафедральный собор святых Петра и Павла
-#    - url: https://dombulgakova.ru/
-#      name: Дом Булгакова
-#    - url: https://www.svetlovka.ru/
+    - url: https://dombulgakova.ru
+      name: Дом Булгакова
+#    - url: https://www.svetlovka.ru
 #      name: Светловка
 
 server:
@@ -33,7 +33,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: am-011cr
   jpa:
     properties:
       hibernate:

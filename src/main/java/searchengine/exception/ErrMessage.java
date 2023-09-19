@@ -7,7 +7,6 @@ import lombok.Setter;
 @Setter
 @Getter
 @AllArgsConstructor
-public class    ErrMessage {
-
+public class ErrMessage {
     private String errorMessage;
 }

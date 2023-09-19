@@ -4,7 +4,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 
 public class CleanHtmlCode {
-    private CleanHtmlCode() {}
+//    private CleanHtmlCode() {}
 
     public static String clear(String content, String selector) {
         StringBuilder html = new StringBuilder();

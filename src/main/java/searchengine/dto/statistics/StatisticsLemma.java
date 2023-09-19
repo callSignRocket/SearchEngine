@@ -1,5 +1,6 @@
 package searchengine.dto.statistics;
 
-public record StatisticsLemma(String lemma, int frequency) {
+public record StatisticsLemma(String lemma,
+                              int frequency) {
 }
 

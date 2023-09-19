@@ -15,7 +15,4 @@ import java.util.Set;
 public interface PageRepository extends JpaRepository<PageEntity, Long> {
     long countBySite(SiteEntity site);
     Iterable<PageEntity> findBySite(SiteEntity site);
-
-    @Query(value = "SELECT DISTINCT p.* FROM page p JOIN index_words i ON p.id = i.page_id WHERE i.lemma_id IN :lemmas", nativeQuery = true)
-    Set<PageEntity> findByLemmaList(@Param("lemmas") Collection<LemmaEntity> lemmaList);
 }

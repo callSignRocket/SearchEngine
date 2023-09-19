@@ -2,9 +2,13 @@ package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.dto.statistics.FalseResponse;
+import searchengine.dto.statistics.TrueResponse;
 import searchengine.model.SiteEntity;
 import searchengine.model.Status;
 import searchengine.parsers.IndexParser;
@@ -49,9 +53,10 @@ public class IndexingServiceImpl implements IndexingService{
     }
 
     @Override
-    public void indexingAll() {
+    public boolean indexingAll() {
         if (isIndexingActive()) {
             log.debug("Индексация уже запущена");
+            return false;
         } else {
             List<Site> siteList = sitesList.getSites();
             executorService = Executors.newFixedThreadPool(processorCoreCount);
@@ -65,6 +70,7 @@ public class IndexingServiceImpl implements IndexingService{
             }
             executorService.shutdown();
         }
+        return true;
     }
 
     @Override
@@ -101,12 +107,34 @@ public class IndexingServiceImpl implements IndexingService{
     }
 
     @Override
-    public void removeSiteFromIndex(String url) {
-        IndexingService indexingService = new IndexingServiceImpl(pageRepository, siteRepository, lemmaRepository,
-                indexRepository, lemmaParser, indexParser, sitesList);
-        if (urlCheck(url)) {
-            siteRepository.deleteByUrl(url);
-            indexingService.urlIndexing(url);
+    public ResponseEntity<Object> indexingAllSites(boolean indexingAll) {
+        if (indexingAll) {
+            return new ResponseEntity<>(new TrueResponse(true), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(new FalseResponse(false, "Индексация не запущена"), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Object> indexingStop(boolean stopIndexing) {
+        if (stopIndexing()) {
+            return new ResponseEntity<>(new TrueResponse(true), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(new FalseResponse(false, "Индексация не была запущена"), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public ResponseEntity<Object> indexingSite(String url) {
+        if (url.isEmpty()) {
+            return new ResponseEntity<>(new FalseResponse(false, "Страница не указана"), HttpStatus.BAD_REQUEST);
+        } else {
+            if (urlIndexing(url) == true) {
+                return new ResponseEntity<>(new TrueResponse(true), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(new FalseResponse(false, "Введите страницу из файла конфигурации"),
+                        HttpStatus.BAD_REQUEST);
+            }
         }
     }
 }
