@@ -130,7 +130,7 @@ public class SiteIndexed implements Runnable {
 
     private void errorSite() {
         SiteEntity site = siteRepository.findByUrl(url);
-        site.setLastError("Индексация прервана");
+        site.setLastError("Индексация остановлена пользователем");
         site.setStatus(Status.FAILED);
         site.setStatusTime(LocalDateTime.now());
         siteRepository.save(site);

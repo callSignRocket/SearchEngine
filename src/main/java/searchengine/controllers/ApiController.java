@@ -45,8 +45,8 @@ public class ApiController {
     @GetMapping("/search")
     public ResponseEntity<Object> search(@RequestParam(name = "query", required = false, defaultValue = "") String query,
                                          @RequestParam(name = "site", required = false, defaultValue = "") String site,
-                                         @RequestParam(name = "offset", defaultValue = "0") int offset,
-                                         @RequestParam(name = "limit", defaultValue = "20") int limit) {
+                                         @RequestParam(name = "offset", required = false, defaultValue = "0") int offset,
+                                         @RequestParam(name = "limit", required = false, defaultValue = "5") int limit) {
 
         ResponseEntity<Object> response = searchService.search(query, site, offset, limit);
         return response;

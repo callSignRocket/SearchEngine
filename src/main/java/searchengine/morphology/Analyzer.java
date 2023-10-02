@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,7 @@ import java.util.Locale;
 public class Analyzer implements Morphology{
 
     private static RussianLuceneMorphology russianLuceneMorphology;
+    private static EnglishLuceneMorphology englishLuceneMorphology;
     private static final String REGEX = "[\\p{Punct}\\d@©◄»«—№…]";
     private final static Marker INVALID_SYMBOL_MARKER = MarkerManager.getMarker("INVALID_SYMBOL");
     private final static Logger LOGGER = LogManager.getLogger(Analyzer.class);
@@ -25,6 +27,7 @@ public class Analyzer implements Morphology{
     static {
         try {
             russianLuceneMorphology = new RussianLuceneMorphology();
+            englishLuceneMorphology = new EnglishLuceneMorphology();
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         }
@@ -48,10 +51,16 @@ public class Analyzer implements Morphology{
     @Override
     public List<String> getLemma(String word) {
         List<String> lemmaList = new ArrayList<>();
+        boolean checkLang = word.chars().mapToObj(Character.UnicodeBlock::of).anyMatch(s -> s.equals(Character.UnicodeBlock.CYRILLIC));
         try {
-            List<String> baseRusForm = russianLuceneMorphology.getNormalForms(word);
-            if (!isServiceWord(word)) {
-                lemmaList.addAll(baseRusForm);
+            if (checkLang) {
+                List<String> baseRusForm = russianLuceneMorphology.getNormalForms(word);
+                if (!isServiceWord(word)) {
+                    lemmaList.addAll(baseRusForm);
+                }
+            } else {
+                List<String> baseEngForm = englishLuceneMorphology.getNormalForms(word);
+                lemmaList.addAll(baseEngForm);
             }
         } catch (Exception e) {
             LOGGER.debug(INVALID_SYMBOL_MARKER, "Символ не найден - {}", word);

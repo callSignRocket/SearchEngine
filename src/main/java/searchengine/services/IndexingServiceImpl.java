@@ -76,7 +76,7 @@ public class IndexingServiceImpl implements IndexingService{
     @Override
     public boolean stopIndexing() {
         if (isIndexingActive()) {
-            log.info("Индексация была остановлена");
+            log.info("Индексация остановлена пользователем");
             executorService.shutdownNow();
             return true;
         } else {
@@ -129,7 +129,7 @@ public class IndexingServiceImpl implements IndexingService{
         if (url.isEmpty()) {
             return new ResponseEntity<>(new FalseResponse(false, "Страница не указана"), HttpStatus.BAD_REQUEST);
         } else {
-            if (urlIndexing(url) == true) {
+            if (urlIndexing(url)) {
                 return new ResponseEntity<>(new TrueResponse(true), HttpStatus.OK);
             } else {
                 return new ResponseEntity<>(new FalseResponse(false, "Введите страницу из файла конфигурации"),
