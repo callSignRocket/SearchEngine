@@ -10,7 +10,6 @@ import searchengine.dto.statistics.StatisticsPage;
 import searchengine.utils.RandomUserAgent;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
@@ -42,6 +41,7 @@ public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
             statisticsPageList.add(statisticsPage);
             Elements elements = document.select(CSS_QUERY);
             List<UrlParser> taskList = new ArrayList<>();
+
             for (Element element : elements) {
                 String link = element.absUrl(ATTRIBUTE_KEY);
                 if (!link.isEmpty()
@@ -56,15 +56,7 @@ public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
                     taskList.add(task);
                 }
             }
-//            taskList.forEach(ForkJoinTask::join);
-            taskList.sort(Comparator.comparing(UrlParser::getUrl));
-            int i = 0;
-            int allTaskSize = taskList.size();
-            while (i < allTaskSize) {
-                UrlParser task = taskList.get(i);
-                task.join();
-                i++;
-            }
+            taskList.forEach(ForkJoinTask::join);
         } catch (Exception e) {
             log.debug("Parsing error - " + url);
             StatisticsPage statisticsPage = new StatisticsPage(url, "", 500);

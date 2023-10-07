@@ -55,12 +55,14 @@ public class Analyzer implements Morphology{
         try {
             if (checkLang) {
                 List<String> baseRusForm = russianLuceneMorphology.getNormalForms(word);
-                if (!isServiceWord(word)) {
+                if (!isServiceWordRus(word)) {
                     lemmaList.addAll(baseRusForm);
                 }
             } else {
                 List<String> baseEngForm = englishLuceneMorphology.getNormalForms(word);
-                lemmaList.addAll(baseEngForm);
+                if (!isServiceWordEng(word)) {
+                    lemmaList.addAll(baseEngForm);
+                }
             }
         } catch (Exception e) {
             LOGGER.debug(INVALID_SYMBOL_MARKER, "Символ не найден - {}", word);
@@ -85,7 +87,7 @@ public class Analyzer implements Morphology{
         return lemmaIndexList;
     }
 
-    private boolean isServiceWord(String word) {
+    private boolean isServiceWordRus(String word) {
         List<String> morphForm = russianLuceneMorphology.getMorphInfo(word);
         for (String l : morphForm) {
             if (l.contains("ПРЕДЛ") ||
@@ -94,6 +96,20 @@ public class Analyzer implements Morphology{
                 l.contains("МС") ||
                 l.contains("ЧАСТ") ||
                 l.length() <= 3) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isServiceWordEng(String word) {
+        List<String> morphForm = englishLuceneMorphology.getMorphInfo(word);
+        for (String l : morphForm) {
+            System.out.println(l);
+            if (l.contains("PREP") ||
+                l.contains("CONJ") ||
+                l.contains("INT") ||
+                l.contains("ARTICLE")) {
                 return true;
             }
         }

@@ -31,22 +31,23 @@ public class SearchServiceImpl implements SearchService{
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
+    private int countResults;
 
     @Override
     public SearchResponse allSiteSearch(String searchText, int offset, int limit) {
         log.info("Результат поиска: " + searchText);
         List<SiteEntity> siteList = siteRepository.findAll();
-        List<StatisticsSearch> result;
+        List<StatisticsSearch> data;
         List<String> textLemmaList = getLemmaFromSearchText(searchText);
         List<LemmaEntity> foundLemmaList = getLemmasFromSiteList(siteList, textLemmaList);
 
         if (foundLemmaList.isEmpty()) {
-            result = getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
-            return new SearchResponse(true, result.size(), result);
+            data = getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
+            return new SearchResponse(true, countResults, data);
         }
 
         List<StatisticsSearch> searchData = getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
-        SearchResponse search = new SearchResponse(true, searchData.size(), searchData);
+        SearchResponse search = new SearchResponse(true, countResults, searchData);
         log.info("Поиск завершен.");
         return search;
     }
@@ -67,7 +68,7 @@ public class SearchServiceImpl implements SearchService{
         List<LemmaEntity> foundLemmaList = getLemmaListFromSite(textLemmaList, site);
         log.info("Поиск завершен.");
         List<StatisticsSearch> data = getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
-        return new SearchResponse(true, data.size(), data);
+        return new SearchResponse(true, countResults, data);
     }
 
     private List<String> getLemmaFromSearchText(String searchText) {
@@ -178,6 +179,7 @@ public class SearchServiceImpl implements SearchService{
             List<IndexEntity> foundIndexList = indexRepository.findByPagesAndLemmas(lemmaList, foundPageList);
             Hashtable<PageEntity, Float> sortedPageByAbsRelevance = getPageAbsRelevance(foundPageList, foundIndexList);
             List<StatisticsSearch> dataList = getSearchData(sortedPageByAbsRelevance, textLemmaList);
+            getCountResults(dataList, offset);
 
             return resultForSearchDtoList(offset, limit, dataList);
         }
@@ -209,6 +211,10 @@ public class SearchServiceImpl implements SearchService{
             return new ArrayList<>();
         }
         if (dataList.size() > limit) {
+            limit += offset;
+            if (limit > dataList.size()) {
+                limit = dataList.size();
+            }
             for (int i = offset; i < limit; i++) {
                 if (dataList.get(i) != null) {
                     result.add(dataList.get(i));
@@ -258,5 +264,10 @@ public class SearchServiceImpl implements SearchService{
             }
             return new ResponseEntity<>(searchResponse, HttpStatus.OK);
         }
+    }
+
+    public int getCountResults(List<StatisticsSearch> dataList, int offset) {
+        countResults = dataList.size();
+        return countResults;
     }
 }
