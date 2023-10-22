@@ -13,7 +13,6 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -54,8 +53,9 @@ public class SiteIndexed implements Runnable {
             List<StatisticsPage> statisticsPageVector = new Vector<>();
             List<String> urlList = new Vector<>();
             ForkJoinPool forkJoinPool = new ForkJoinPool(coreCount);
-            List<StatisticsPage> pages = forkJoinPool.invoke(new UrlParser(urlFormat, statisticsPageVector, urlList));
-            return new CopyOnWriteArrayList<>(pages);
+            UrlParser urlParser = new UrlParser(urlFormat, statisticsPageVector, urlList);
+            forkJoinPool.invoke(urlParser);
+            return urlParser.statisticsPageList;
         } else throw new InterruptedException();
     }
 

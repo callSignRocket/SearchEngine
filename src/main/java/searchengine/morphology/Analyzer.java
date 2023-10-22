@@ -105,7 +105,6 @@ public class Analyzer implements Morphology{
     private boolean isServiceWordEng(String word) {
         List<String> morphForm = englishLuceneMorphology.getMorphInfo(word);
         for (String l : morphForm) {
-            System.out.println(l);
             if (l.contains("PREP") ||
                 l.contains("CONJ") ||
                 l.contains("INT") ||

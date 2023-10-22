@@ -11,14 +11,13 @@ import searchengine.utils.RandomUserAgent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.RecursiveAction;
 
 @Slf4j
-public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
+public class UrlParser extends RecursiveAction {
 
     private final String url;
-    private final List<StatisticsPage> statisticsPageList;
+    public final List<StatisticsPage> statisticsPageList;
     private final List<String> urlList;
     private static final String CSS_QUERY = "a[href]";
     private static final String ATTRIBUTE_KEY = "href";
@@ -30,7 +29,7 @@ public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
     }
 
     @Override
-    protected List<StatisticsPage> compute() {
+    protected void compute() {
         try {
             Thread.sleep(150);
             Document document = getConnect(url);
@@ -50,19 +49,19 @@ public class UrlParser extends RecursiveTask<List<StatisticsPage>> {
                         && !isFile(link)
                         && !urlList.contains(link))
                 {
+                    System.out.println("ПОТОК " + Thread.currentThread().getName() + " " + link);
                     urlList.add(link);
                     UrlParser task = new UrlParser(link, statisticsPageList, urlList);
                     task.fork();
                     taskList.add(task);
                 }
             }
-            taskList.forEach(ForkJoinTask::join);
+            invokeAll(taskList);
         } catch (Exception e) {
             log.debug("Parsing error - " + url);
             StatisticsPage statisticsPage = new StatisticsPage(url, "", 500);
             statisticsPageList.add(statisticsPage);
         }
-        return statisticsPageList;
     }
 
     public Document getConnect(String url) {
