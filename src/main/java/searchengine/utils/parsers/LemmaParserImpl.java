@@ -1,4 +1,4 @@
-package searchengine.parsers;
+package searchengine.utils.parsers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import searchengine.dto.statistics.StatisticsLemma;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
-import searchengine.morphology.Morphology;
+import searchengine.utils.morphology.Morphology;
 import searchengine.repositories.PageRepository;
 import searchengine.utils.CleanHtmlCode;
 

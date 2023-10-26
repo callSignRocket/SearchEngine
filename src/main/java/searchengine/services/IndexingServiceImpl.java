@@ -11,9 +11,9 @@ import searchengine.dto.statistics.FalseResponse;
 import searchengine.dto.statistics.TrueResponse;
 import searchengine.model.SiteEntity;
 import searchengine.model.Status;
-import searchengine.parsers.IndexParser;
-import searchengine.parsers.LemmaParser;
-import searchengine.parsers.SiteIndexed;
+import searchengine.utils.parsers.IndexParser;
+import searchengine.utils.parsers.LemmaParser;
+import searchengine.utils.parsers.SiteIndexed;
 import searchengine.repositories.IndexRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
@@ -99,7 +99,7 @@ public class IndexingServiceImpl implements IndexingService{
     private boolean urlCheck(String url) {
         List<Site> urlList = sitesList.getSites();
         for (Site site : urlList) {
-            if (site.getUrl().equals(url)) {
+            if (url.startsWith(site.getUrl())) {
                 return true;
             }
         }

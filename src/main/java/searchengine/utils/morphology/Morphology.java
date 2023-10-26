@@ -1,4 +1,4 @@
-package searchengine.morphology;
+package searchengine.utils.morphology;
 
 import java.util.HashMap;
 import java.util.List;

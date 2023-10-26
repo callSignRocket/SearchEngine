@@ -1,4 +1,4 @@
-package searchengine.parsers;
+package searchengine.utils.parsers;
 
 import searchengine.dto.statistics.StatisticsLemma;
 import searchengine.model.SiteEntity;

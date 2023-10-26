@@ -1,4 +1,4 @@
-package searchengine.parsers;
+package searchengine.utils.parsers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,7 +7,7 @@ import searchengine.dto.statistics.StatisticsIndex;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
-import searchengine.morphology.Morphology;
+import searchengine.utils.morphology.Morphology;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.utils.CleanHtmlCode;
@@ -40,26 +40,33 @@ public class IndexParserImpl implements IndexParser{
                 HashMap<String, Integer> titleList = morphology.getLemmaList(title);
                 HashMap<String, Integer> bodyList = morphology.getLemmaList(body);
 
-                for (LemmaEntity lemma : lemmaList) {
-                    Long lemmaId = lemma.getId();
-                    String exactLemma = lemma.getLemma();
-                    if (titleList.containsKey(exactLemma) || bodyList.containsKey(exactLemma)) {
-                        float totalRank = 0.0F;
-                        if (titleList.get(exactLemma) != null) {
-                            Float titleRank = Float.valueOf(titleList.get(exactLemma));
-                            totalRank += titleRank;
-                        }
-                        if (bodyList.get(exactLemma) != null) {
-                            float bodyRank = (float) (bodyList.get(exactLemma) * 0.8);
-                            totalRank += bodyRank;
-                        }
-                        statisticsIndexList.add(new StatisticsIndex(pageId, lemmaId, totalRank));
-                    } else {
-                        log.debug("Лемма не найдена");
-                    }
-                }
+                addStatisticsIndexList(lemmaList, titleList, bodyList, pageId);
             } else {
                 log.debug("Bad status code: " + page.getCode());
+            }
+        }
+    }
+
+    public void addStatisticsIndexList (List<LemmaEntity> lemmaList,
+                                        HashMap<String, Integer> titleList,
+                                        HashMap<String, Integer> bodyList,
+                                        long pageId) {
+        for (LemmaEntity lemma : lemmaList) {
+            Long lemmaId = lemma.getId();
+            String exactLemma = lemma.getLemma();
+            if (titleList.containsKey(exactLemma) || bodyList.containsKey(exactLemma)) {
+                float totalRank = 0.0F;
+                if (titleList.get(exactLemma) != null) {
+                    Float titleRank = Float.valueOf(titleList.get(exactLemma));
+                    totalRank += titleRank;
+                }
+                if (bodyList.get(exactLemma) != null) {
+                    float bodyRank = (float) (bodyList.get(exactLemma) * 0.8);
+                    totalRank += bodyRank;
+                }
+                statisticsIndexList.add(new StatisticsIndex(pageId, lemmaId, totalRank));
+            } else {
+                log.debug("Лемма не найдена");
             }
         }
     }

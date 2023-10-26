@@ -1,4 +1,4 @@
-package searchengine.parsers;
+package searchengine.utils.parsers;
 
 import lombok.RequiredArgsConstructor;
 import searchengine.config.Site;

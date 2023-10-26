@@ -1,4 +1,4 @@
-package searchengine.parsers;
+package searchengine.utils.parsers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -19,7 +19,7 @@ public class UrlParser extends RecursiveAction {
     private final String url;
     public final List<StatisticsPage> statisticsPageList;
     private final List<String> urlList;
-    private static final String CSS_QUERY = "a[href]";
+    private static final String CSS_QUERY = "a";
     private static final String ATTRIBUTE_KEY = "href";
 
     public UrlParser(String url, List<StatisticsPage> statisticsPageList, List<String> urlList) {
@@ -44,12 +44,13 @@ public class UrlParser extends RecursiveAction {
             for (Element element : elements) {
                 String link = element.absUrl(ATTRIBUTE_KEY);
                 if (!link.isEmpty()
-                        && link.startsWith(url)
+                        && link.startsWith(element.baseUri())
+                        && !link.equals(element.baseUri())
                         && !link.contains("#")
                         && !isFile(link)
                         && !urlList.contains(link))
                 {
-                    System.out.println("ПОТОК " + Thread.currentThread().getName() + " " + link);
+                    log.info(link);
                     urlList.add(link);
                     UrlParser task = new UrlParser(link, statisticsPageList, urlList);
                     task.fork();
