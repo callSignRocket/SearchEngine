@@ -38,10 +38,12 @@ public class SiteIndexed implements Runnable {
         }
         saveDateSite();
         try {
-            List<StatisticsPage> statisticsPageList = getStatisticsPageList();
-            saveToBase(statisticsPageList);
-            getLemmasPage();
-            indexingWords();
+            if (startsWithUrl(url)) {
+                List<StatisticsPage> statisticsPageList = getStatisticsPageList();
+                saveToBase(statisticsPageList);
+                getLemmasPage();
+                indexingWords();
+            }
         } catch (InterruptedException e) {
             errorSite();
         }
@@ -53,10 +55,21 @@ public class SiteIndexed implements Runnable {
             List<StatisticsPage> statisticsPageVector = new Vector<>();
             List<String> urlList = new Vector<>();
             ForkJoinPool forkJoinPool = new ForkJoinPool(coreCount);
-            UrlParser urlParser = new UrlParser(urlFormat, statisticsPageVector, urlList);
+            UrlParser urlParser = new UrlParser(urlFormat, statisticsPageVector, urlList, sitesList);
             forkJoinPool.invoke(urlParser);
             return urlParser.statisticsPageList;
         } else throw new InterruptedException();
+    }
+
+    private boolean startsWithUrl(String link) {
+        link.toLowerCase();
+        List<Site> urlList = sitesList.getSites();
+        for (Site site : urlList) {
+            if (link.startsWith(site.getUrl())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void getLemmasPage() {

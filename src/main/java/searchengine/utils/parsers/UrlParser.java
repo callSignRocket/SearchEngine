@@ -6,6 +6,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import searchengine.config.Site;
+import searchengine.config.SitesList;
 import searchengine.dto.statistics.StatisticsPage;
 import searchengine.utils.RandomUserAgent;
 
@@ -21,11 +23,15 @@ public class UrlParser extends RecursiveAction {
     private final List<String> urlList;
     private static final String CSS_QUERY = "a";
     private static final String ATTRIBUTE_KEY = "href";
+    private final SitesList sitesList;
+    private final String https = "https://";
+    private final String http ="http://";
 
-    public UrlParser(String url, List<StatisticsPage> statisticsPageList, List<String> urlList) {
+    public UrlParser(String url, List<StatisticsPage> statisticsPageList, List<String> urlList, SitesList sitesList) {
         this.url = url;
         this.statisticsPageList = statisticsPageList;
         this.urlList = urlList;
+        this.sitesList = sitesList;
     }
 
     @Override
@@ -44,15 +50,14 @@ public class UrlParser extends RecursiveAction {
             for (Element element : elements) {
                 String link = element.absUrl(ATTRIBUTE_KEY);
                 if (!link.isEmpty()
-                        && link.startsWith(element.baseUri())
+                        && containsSite(link)
                         && !link.equals(element.baseUri())
                         && !link.contains("#")
                         && !isFile(link)
                         && !urlList.contains(link))
                 {
-                    log.info(link);
                     urlList.add(link);
-                    UrlParser task = new UrlParser(link, statisticsPageList, urlList);
+                    UrlParser task = new UrlParser(link, statisticsPageList, urlList, sitesList);
                     task.fork();
                     taskList.add(task);
                 }
@@ -74,6 +79,25 @@ public class UrlParser extends RecursiveAction {
             log.debug("Не удается подключиться к сайту " + url);
         }
         return document;
+    }
+
+    private boolean containsSite(String link) {
+        String host;
+        boolean containsSite = false;
+
+        for (Site site : sitesList.getSites()) {
+            host = site.getUrl();
+            if (host.contains(https)){
+                host = host.replace(https, "");
+            } else if (host.contains(http)) {
+                host = host.replace(http, "");
+            }
+
+            if (link.contains(host)) {
+                containsSite = true;
+            }
+        }
+        return containsSite;
     }
 
     private static boolean isFile(String link) {
