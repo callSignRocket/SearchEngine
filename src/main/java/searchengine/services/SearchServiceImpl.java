@@ -234,17 +234,28 @@ public class SearchServiceImpl implements SearchService{
     
 
     private Hashtable<PageEntity, Float> getPageAbsRelevance(List<PageEntity> pageList, List<IndexEntity> indexList) {
-        Map<PageEntity, Float> pageWithRelevance = pageList.stream()
-                .collect(Collectors.toMap(page -> page, page -> indexList.stream()
-                        .filter(index -> index.getPage().equals(page))
-                        .map(IndexEntity::getRank)
-                        .reduce(0f, Float::sum)));
+        HashMap<PageEntity, Float> pageWithRelevance = new HashMap<>();
+        for (PageEntity page : pageList) {
+            float relevant = 0;
+            for (IndexEntity index : indexList) {
+                if (index.getPage() == page) {
+                    relevant += index.getRank();
+                }
+            }
+            pageWithRelevance.put(page, relevant);
+        }
 
-        Map<PageEntity, Float> pageWithAbsRelevance = pageWithRelevance.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue() / Collections.max(pageWithRelevance.values())));
+        HashMap<PageEntity, Float> pageWithAbsRelevance = new HashMap<>();
+        for (PageEntity page : pageWithRelevance.keySet()) {
+            float absRelevant = pageWithRelevance.get(page) / Collections.max(pageWithRelevance.values());
+            pageWithAbsRelevance.put(page, absRelevant);
+        }
+        return sortHashSetByRelevance(pageWithAbsRelevance);
+    }
 
-        return pageWithAbsRelevance.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, Hashtable::new));
+    private Hashtable<PageEntity, Float> sortHashSetByRelevance(HashMap<PageEntity, Float> unsortedHash) {
+        return unsortedHash.entrySet().stream().sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).
+                collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, Hashtable::new));
     }
 
     @Override
